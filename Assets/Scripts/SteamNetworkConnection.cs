@@ -10,11 +10,14 @@ public class SteamNetworkConnection : NetworkConnection
     }
 
     HostTopology m_HostTopology;
+    NetworkWriter writer;
 
     public SteamNetworkConnection(CSteamID remoteId, HostTopology hostTopology)
     {
         m_RemoteSteamId = remoteId;
         m_HostTopology = hostTopology;
+
+        writer = new NetworkWriter();
     }
 
     public override void Initialize(string address, int hostId, int connectionId, HostTopology hostTopology)
@@ -49,6 +52,20 @@ public class SteamNetworkConnection : NetworkConnection
         }
     }
 
+    public override bool Send(short msgType, MessageBase msg)
+    {
+        EP2PSend eP2PSendType = EP2PSend.k_EP2PSendReliable;
 
+        QosType qos = m_HostTopology.DefaultConfig.Channels[0].QOS;
+        if (qos == QosType.Unreliable || qos == QosType.UnreliableFragmented || qos == QosType.UnreliableSequenced)
+        {
+            eP2PSendType = EP2PSend.k_EP2PSendUnreliable;
+        }
+
+        writer.StartMessage(msgType);
+        msg.Serialize(writer);
+        writer.FinishMessage();
+        return SteamNetworking.SendP2PPacket(RemoteSteamId, writer.AsArray(),(uint) writer.AsArray().Length, eP2PSendType, 0);
+    }
 
 }
