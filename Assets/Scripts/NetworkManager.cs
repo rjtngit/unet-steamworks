@@ -38,6 +38,8 @@ namespace UNETSteamworks
         // callbacks
         private Callback<LobbyEnter_t> m_LobbyEntered;
         private Callback<P2PSessionRequest_t> m_P2PSessionRequested;
+        private Callback<GameLobbyJoinRequested_t> m_GameLobbyJoinRequested;
+
 
         void Awake()
         {
@@ -53,6 +55,8 @@ namespace UNETSteamworks
             if (SteamManager.Initialized) {
                 m_LobbyEntered = Callback<LobbyEnter_t>.Create(OnLobbyEntered);
                 m_P2PSessionRequested = Callback<P2PSessionRequest_t>.Create (OnP2PSessionRequested);
+                m_GameLobbyJoinRequested = Callback<GameLobbyJoinRequested_t>.Create (OnGameLobbyJoinRequested);
+
             }
            
         }
@@ -69,7 +73,7 @@ namespace UNETSteamworks
 
             if (!string.IsNullOrEmpty(input))
             {
-                // invite accepted. join friend's game
+                // invite accepted and launched game. join friend's game
                 ulong lobbyId = 0;
 
                 if (ulong.TryParse(input, out lobbyId))
@@ -254,6 +258,14 @@ namespace UNETSteamworks
             }
 
             Debug.LogError("Connection failed");
+        }
+
+        void OnGameLobbyJoinRequested(GameLobbyJoinRequested_t pCallback)
+        {
+            // Invite accepted while game running
+            JoinFriendTriggered = true;
+            steamLobbyId = pCallback.m_steamIDLobby;
+            JoinFriendLobby();
         }
 
         #endregion
