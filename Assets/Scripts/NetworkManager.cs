@@ -11,8 +11,6 @@ namespace UNETSteamworks
 {
     public class NetworkManager : MonoBehaviour
     {
-        const short MyReadyMsg = 1002;
-
         public enum SessionConnectionState
         {
             UNDEFINED,
@@ -238,10 +236,6 @@ namespace UNETSteamworks
                 // wait for unet server to start up
                 yield return null;
             }
-                
-            // connect to server (self)
-            ConnectToUnetServerForSteam(SteamUser.GetSteamID());
-
 
             while (myClient == null || !myClient.isConnected)
             { 
@@ -277,7 +271,10 @@ namespace UNETSteamworks
                         SteamNetworking.SendP2PPacket (pCallback.m_steamIDRemote, null, 0, EP2PSend.k_EP2PSendReliable);
 
                         // Register the user with Unet server
-                        steamIdUnetConnectionMap[member.m_SteamID] = new SteamNetworkConnection(member, CreateTopology());
+                        var newConn = new SteamNetworkConnection(member, SteamUser.GetSteamID(), CreateTopology());
+                        steamIdUnetConnectionMap[member.m_SteamID] = newConn;
+                        newConn.SetHandlers(NetworkServer.handlers);
+
 
                         return;
                     }
@@ -291,14 +288,18 @@ namespace UNETSteamworks
         {
             Debug.LogError("Starting unet server");
 
-            NetworkServer.RegisterHandler(MyReadyMsg, OnClientReady);
-
             var t = CreateTopology();
 
+            NetworkServer.RegisterHandler(MsgType.Ready, OnClientReady);
+
             NetworkServer.Configure(t);
-            NetworkServer.dontListen = true;
+            NetworkServer.SetNetworkConnectionClass<SteamNetworkConnection>();
+         //   NetworkServer.dontListen = true;
             NetworkServer.Listen(0);
 
+            // connect to server (self)
+            ConnectToUnetServerForSteam(SteamUser.GetSteamID());
+            (myClient.connection as SteamNetworkConnection).SetHandlers(NetworkServer.handlers);
 
         }
 
@@ -310,7 +311,7 @@ namespace UNETSteamworks
 
             if (conn != null)
             {
-                Debug.LogError("server setting client ready: " + conn.RemoteSteamId.m_SteamID);
+                Debug.LogError("server setting client ready: " + conn.mySteamId.m_SteamID);
 
                 NetworkServer.SetClientReady(conn);
                 var player = GameObject.Instantiate(playerPrefab);
@@ -347,10 +348,13 @@ namespace UNETSteamworks
                     if (SteamNetworking.GetP2PSessionState (host, out sessionState)) 
                     {
                         // add host connection reference
-                        steamIdUnetConnectionMap[host.m_SteamID] = new SteamNetworkConnection(host, CreateTopology());
+                        var hostConn = new SteamNetworkConnection(host, SteamUser.GetSteamID(), CreateTopology());
+                        steamIdUnetConnectionMap[host.m_SteamID] = hostConn;
 
                         // connect to the unet server
                         ConnectToUnetServerForSteam(host);
+
+                        hostConn.SetHandlers(myClient.handlers);
 
                         yield break;
                     }
@@ -369,13 +373,13 @@ namespace UNETSteamworks
             JoinFriendLobby();
         }
 
-        void ConnectToUnetServerForSteam(CSteamID remoteId)
+        void ConnectToUnetServerForSteam(CSteamID hostSteamId)
         {
             Debug.LogError("Connecting to Unet server");
 
             var t = CreateTopology();
 
-            var conn = new SteamNetworkConnection(remoteId, t);
+            var conn = new SteamNetworkConnection(SteamUser.GetSteamID(), hostSteamId, t);
             steamIdUnetConnectionMap[SteamUser.GetSteamID().m_SteamID] = conn;
 
             var steamClient = new SteamNetworkClient(conn);
@@ -385,8 +389,7 @@ namespace UNETSteamworks
 
             steamClient.SetNetworkConnectionClass<SteamNetworkConnection>();
             steamClient.Configure(t);
-            steamClient.Connect(remoteId);
-
+            steamClient.Connect();
 
         }
 
@@ -400,10 +403,7 @@ namespace UNETSteamworks
             if (conn != null)
             {
                 Debug.LogError("Setting my client ready");
-
                 ClientScene.Ready(conn);
-
-                myClient.Send(MyReadyMsg, new StringMessage(conn.RemoteSteamId.m_SteamID.ToString()));
             }
 
 

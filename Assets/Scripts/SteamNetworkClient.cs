@@ -8,23 +8,20 @@ namespace UNETSteamworks
 {
     public class SteamNetworkClient : NetworkClient {
 
-        CSteamID remoteId;
-
         public SteamNetworkConnection steamConnection { 
             get {
                 return connection as SteamNetworkConnection;
             }
         }
 
-        public void Connect(CSteamID remoteId)
+        public void Connect()
         {
             Connect("localhost", 0);
           
             m_AsyncConnect = ConnectState.Connected;
 
-            this.remoteId = remoteId;
-
             steamConnection.Initialize();
+            steamConnection.SetHandlers(handlers);
             steamConnection.InvokeHandlerNoData(MsgType.Connect);
 
         }
