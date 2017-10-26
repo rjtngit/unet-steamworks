@@ -18,16 +18,11 @@ namespace UNETSteamworks
 
         public void Connect()
         {
-            
             Connect("localhost", 4444);
 
             m_AsyncConnect = ConnectState.Connected;
 
-            Debug.LogError(connection.connectionId);
             steamConnection.Initialize();
-
-            Debug.LogError(connection.connectionId);
-
             steamConnection.InvokeHandlerNoData(MsgType.Connect);
         }
 

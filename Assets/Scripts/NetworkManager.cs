@@ -31,9 +31,9 @@ namespace UNETSteamworks
 
         // unet vars
         public NetworkClient myClient { get; private set;}
+        NetworkConnection peerConn;
 
-        private Dictionary<ulong, NetworkConnection> steamIdUnetConnectionMap = new Dictionary<ulong, NetworkConnection>();
-        
+
         // steam state vars
         CSteamID steamLobbyId;
         public bool JoinFriendTriggered { get; private set; }
@@ -101,11 +101,7 @@ namespace UNETSteamworks
                 return;
             }
 
-            if (myClient == null || !myClient.isConnected)
-            {
-                return;
-            }
-
+   
             uint packetSize;
 
             if (SteamNetworking.IsP2PPacketAvailable (out packetSize))
@@ -127,7 +123,17 @@ namespace UNETSteamworks
                     }
                     */
 
-                    myClient.connection.TransportReceive(data, Convert.ToInt32(packetSize), 0);
+                    NetworkConnection conn;
+                    if (NetworkServer.active)
+                    {
+                        conn = GetConnections()[1];
+                    }
+                    else
+                    {
+                        conn = GetConnections()[0];
+                    }
+
+                    conn.TransportReceive(data, Convert.ToInt32(packetSize), 0);
 
                 }
             }
@@ -157,9 +163,9 @@ namespace UNETSteamworks
                 myClient.Disconnect();
             }
 
-            steamIdUnetConnectionMap.Clear();
             steamLobbyId.Clear();
             p2pConnectionEstablished = false;
+            peerConn = null;
         }
 
 
@@ -226,18 +232,6 @@ namespace UNETSteamworks
 
         }
 
-        public NetworkConnection GetUnetConnectionForSteamUser(CSteamID userId)
-        {
-            NetworkConnection result;
-
-            if (steamIdUnetConnectionMap.TryGetValue(userId.m_SteamID, out result))
-            {
-                return result;
-            }
-
-            Debug.LogError("Failed to find steam user id");
-            return null;
-        }
 
         #region host
         IEnumerator DoShowInviteDialogWhenReady()
@@ -279,17 +273,31 @@ namespace UNETSteamworks
                         SteamNetworking.SendP2PPacket (pCallback.m_steamIDRemote, null, 0, EP2PSend.k_EP2PSendReliable);
 
                         // create new connnection and client and connect them to server
-                        var conn = new SteamNetworkConnection(member, CreateTopology());
-                        steamIdUnetConnectionMap[member.m_SteamID] = conn;
+                        peerConn = new SteamNetworkConnection(member, CreateTopology());
+                        var newClient = new SteamNetworkClient(peerConn);
+                        newClient.SetNetworkConnectionClass<SteamNetworkConnection>();
+                        newClient.Configure(CreateTopology());
+                        newClient.Connect();
 
-                        NetworkServer.AddExternalConnection(conn);
-
+                        NetworkServer.AddExternalConnection(peerConn);
 
                         return;
                     }
                 }
             }
 
+        }
+
+        NetworkConnection[] GetConnections()
+        {
+            if (NetworkServer.active)
+            {
+                return new NetworkConnection[]{ NetworkServer.connections[0], peerConn };
+            }
+            else
+            {
+                return new NetworkConnection[]{  myClient.connection };
+            }
         }
 
 
@@ -308,15 +316,16 @@ namespace UNETSteamworks
             // create a connection to represent the server
             myClient = ClientScene.ConnectLocalServer();
             myClient.Configure(t);
-            steamIdUnetConnectionMap[SteamUser.GetSteamID().m_SteamID] = myClient.connection;
-
-        
+            myClient.Connect("localhost", 4444);
+            myClient.connection.Initialize("localhost", 0, ++SteamNetworkConnection.nextId, t);
 
             // spawn self
             var myConn = NetworkServer.connections[0];
             NetworkServer.SetClientReady(myConn);
             var myplayer = GameObject.Instantiate(playerPrefab);
             NetworkServer.SpawnWithClientAuthority(myplayer, myConn);
+
+
         }
 
         void OnSpawnRequested(NetworkMessage msg)
@@ -324,17 +333,13 @@ namespace UNETSteamworks
             Debug.LogError("Spawn request received");
 
             // spawn peer
-            var steamId = new CSteamID(ulong.Parse(msg.ReadMessage<StringMessage>().value));
-            var conn = GetUnetConnectionForSteamUser(steamId);
+            var conn = GetConnections()[1];
+           
+            NetworkServer.SetClientReady(conn);
+            var player = GameObject.Instantiate(playerPrefab);
 
-            if (conn != null)
-            {
-                NetworkServer.SetClientReady(conn);
-                var player = GameObject.Instantiate(playerPrefab);
-
-                bool spawned = NetworkServer.SpawnWithClientAuthority(player, conn);
-                Debug.LogError(spawned ? "Spawned player" :"Failed to spawn player");
-            }
+            bool spawned = NetworkServer.SpawnWithClientAuthority(player, conn);
+            Debug.LogError(spawned ? "Spawned player" :"Failed to spawn player");
         }
 
         #endregion
@@ -392,7 +397,6 @@ namespace UNETSteamworks
             var t = CreateTopology();
 
             var conn = new SteamNetworkConnection(hostSteamId, t);
-            steamIdUnetConnectionMap[hostSteamId.m_SteamID] = conn;
 
             var steamClient = new SteamNetworkClient(conn);
             steamClient.RegisterHandler(MsgType.Connect, OnConnect);

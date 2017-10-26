@@ -9,7 +9,7 @@ namespace UNETSteamworks
 {
     public class SteamNetworkConnection : NetworkConnection
     {
-        public static int nextId = 1000;
+        public static int nextId = -1;
 
         public CSteamID steamId;
         HostTopology m_HostTopology;
