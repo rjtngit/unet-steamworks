@@ -14,16 +14,21 @@ namespace UNETSteamworks
             }
         }
 
+        public string status { get { return m_AsyncConnect.ToString(); } }
+
         public void Connect()
         {
-            Connect("localhost", 0);
-          
+            
+            Connect("localhost", 4444);
+
             m_AsyncConnect = ConnectState.Connected;
 
+            Debug.LogError(connection.connectionId);
             steamConnection.Initialize();
-            steamConnection.SetHandlers(handlers);
-            steamConnection.InvokeHandlerNoData(MsgType.Connect);
 
+            Debug.LogError(connection.connectionId);
+
+            steamConnection.InvokeHandlerNoData(MsgType.Connect);
         }
 
         public SteamNetworkClient(NetworkConnection conn) : base(conn)

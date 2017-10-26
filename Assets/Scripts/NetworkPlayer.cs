@@ -12,9 +12,10 @@ public class NetworkPlayer : NetworkBehaviour {
     [SyncVar]
     public ulong steamId;
 
-    public override void OnStartClient()
+
+    public override void OnStartAuthority()
     {
-        base.OnStartClient();
+        base.OnStartAuthority();
 
         steamId = SteamUser.GetSteamID().m_SteamID;
     }
