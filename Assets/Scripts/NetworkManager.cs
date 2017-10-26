@@ -141,6 +141,36 @@ namespace UNETSteamworks
 
         }
 
+        public CSteamID GetSteamIDForConnection(NetworkConnection conn)
+        {
+            if (NetworkServer.active)
+            {
+                if (NetworkServer.connections.Count >= 1 && conn == NetworkServer.connections[0])
+                {
+                    // this is the server-to-client connection for local player
+                    return SteamUser.GetSteamID();
+                }
+
+                if (NetworkServer.connections.Count >= 2 && conn == NetworkServer.connections[1])
+                {
+                    // this is the server-to-client connection for peer
+                    return (peerConn as SteamNetworkConnection).steamId;
+                }
+
+                if (myClient != null && conn == myClient.connection)
+                {
+                    // this is the client-to-server connection for local player
+                    return SteamUser.GetSteamID();
+                }
+            }
+            else
+            {
+                return (myClient as SteamNetworkClient).steamConnection.steamId;
+            }
+
+            return new CSteamID();
+        }
+
         HostTopology CreateTopology()
         {
             ConnectionConfig config = new ConnectionConfig();

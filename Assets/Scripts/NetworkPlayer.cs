@@ -12,12 +12,26 @@ public class NetworkPlayer : NetworkBehaviour {
     [SyncVar]
     public ulong steamId;
 
-
-    public override void OnStartAuthority()
+    public override void OnStartServer()
     {
-        base.OnStartAuthority();
+        base.OnStartServer();
 
-        steamId = SteamUser.GetSteamID().m_SteamID;
+        var id = GetComponent<NetworkIdentity>();
+
+        StartCoroutine(SetNameWhenReady());
+    }
+
+    IEnumerator SetNameWhenReady()
+    {
+        var id = GetComponent<NetworkIdentity>();
+
+        while (id.clientAuthorityOwner == null)
+        {
+            yield return null;
+        }
+
+        steamId = UNETSteamworks.NetworkManager.Instance.GetSteamIDForConnection(id.clientAuthorityOwner).m_SteamID;
+
     }
 
     void Update()
@@ -28,6 +42,9 @@ public class NetworkPlayer : NetworkBehaviour {
             transform.Translate(inputMovement*Time.deltaTime*moveSpeed, Space.World);
         }
       
+        GetComponent<Rigidbody>().isKinematic = !hasAuthority;
+
         label.text = SteamFriends.GetFriendPersonaName(new CSteamID(steamId));
+
     }
 }
