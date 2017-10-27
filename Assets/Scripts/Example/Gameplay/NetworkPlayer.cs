@@ -7,8 +7,6 @@ using UnityEngine.Networking.NetworkSystem;
 
 public class NetworkPlayer : NetworkBehaviour {
 
-    const short RequestFireMsg = 2002;
-
     public GameObject bulletPrefab;
     public TextMesh label;
     public float moveSpeed;
@@ -32,7 +30,7 @@ public class NetworkPlayer : NetworkBehaviour {
             yield return null;
         }
 
-        steamId = UNETSteamworks.SteamNetworkManager.Instance.GetSteamIDForConnection(id.clientAuthorityOwner).m_SteamID;
+        steamId = SteamNetworkManager.Instance.GetSteamIDForConnection(id.clientAuthorityOwner).m_SteamID;
 
     }
 

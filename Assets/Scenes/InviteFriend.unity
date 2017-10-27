@@ -1180,12 +1180,15 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 49f78835a452e96439eacc1b60a9741c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  autoInviteSteamId: 
-  playerPrefab: {fileID: 1598751002499710, guid: 8be15cb54cfb9934d9699774a60cd3df,
-    type: 2}
+  UNETServerController:
+    autoInviteSteamId: 
+    playerPrefab: {fileID: 1598751002499710, guid: 8be15cb54cfb9934d9699774a60cd3df,
+      type: 2}
   networkPrefabs:
   - {fileID: 1598751002499710, guid: 8be15cb54cfb9934d9699774a60cd3df, type: 2}
   - {fileID: 1312610670525394, guid: 74327dab7a9f60c42abacfdbd26eca3e, type: 2}
+  steamLobbyId:
+    m_SteamID: 0
 --- !u!4 &2102141310
 Transform:
   m_ObjectHideFlags: 0

@@ -14,8 +14,8 @@ public class InviteFriendButton : MonoBehaviour {
     {
         // Disable button when connection starts
         while (
-            UNETSteamworks.SteamNetworkManager.Instance.lobbyConnectionState != UNETSteamworks.SteamNetworkManager.SessionConnectionState.CONNECTING &&
-            UNETSteamworks.SteamNetworkManager.Instance.lobbyConnectionState != UNETSteamworks.SteamNetworkManager.SessionConnectionState.CONNECTED
+            SteamNetworkManager.Instance.lobbyConnectionState != SteamNetworkManager.SessionConnectionState.CONNECTING &&
+            SteamNetworkManager.Instance.lobbyConnectionState != SteamNetworkManager.SessionConnectionState.CONNECTED
         )
         {
             yield return null;
@@ -27,6 +27,6 @@ public class InviteFriendButton : MonoBehaviour {
     // Hooked up in Inspector 
     public void OnClick()
     {
-        UNETSteamworks.SteamNetworkManager.Instance.CreateLobbyAndInviteFriend();
+        SteamNetworkManager.Instance.CreateLobbyAndInviteFriend();
     }
 }

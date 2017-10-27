@@ -5,74 +5,50 @@ using UnityEngine.Networking.NetworkSystem;
 using System.Text;
 using System.Collections.Generic;
 
-namespace UNETSteamworks
+
+public class SteamNetworkConnection : NetworkConnection
 {
-    public class SteamNetworkConnection : NetworkConnection
+    public CSteamID steamId;
+
+    public SteamNetworkConnection() : base()
     {
-        public static int nextId = -1;
+    }
 
-        public CSteamID steamId;
-        HostTopology m_HostTopology;
+    public SteamNetworkConnection(CSteamID steamId, HostTopology hostTopology)
+    {
+        this.steamId = steamId;
+    }
 
-        public SteamNetworkConnection() : base()
+    public override bool TransportSend(byte[] bytes, int numBytes, int channelId, out byte error)
+    {
+        if (steamId.m_SteamID == SteamUser.GetSteamID().m_SteamID)
         {
-
+            // sending to self. short circuit
+            TransportReceive(bytes, numBytes, channelId);
+            error = 0;
+            return true;
         }
 
-        public SteamNetworkConnection(CSteamID steamId, HostTopology hostTopology)
+        EP2PSend eP2PSendType = EP2PSend.k_EP2PSendReliable;
+
+        QosType qos = SteamNetworkManager.hostTopology.DefaultConfig.Channels[channelId].QOS;
+        if (qos == QosType.Unreliable || qos == QosType.UnreliableFragmented || qos == QosType.UnreliableSequenced)
         {
-            this.steamId = steamId;
-            m_HostTopology = hostTopology;
+            eP2PSendType = EP2PSend.k_EP2PSendUnreliable;
         }
 
-        public void Initialize()
+        // Send packet to peer through Steam
+        if (SteamNetworking.SendP2PPacket(steamId, bytes, (uint)numBytes, eP2PSendType))
         {
-            int id = ++nextId;
-            Initialize(string.Empty, id, id, m_HostTopology);
+            error = 0;
+            return true;
         }
-
-        public override void Initialize(string address, int hostId, int connectionId, HostTopology hostTopology)
+        else
         {
-            m_HostTopology = hostTopology;
-            base.Initialize(address, hostId, connectionId, hostTopology);
+            error = 1;
+            return false;
         }
-
-
-        public void Update()
-        {
-            FlushChannels();
-        }
-
-        public override bool TransportSend(byte[] bytes, int numBytes, int channelId, out byte error)
-        {
-            if (steamId.m_SteamID == SteamUser.GetSteamID().m_SteamID)
-            {
-                // sending to self. short circuit
-                TransportReceive(bytes, numBytes, channelId);
-                error = 0;
-                return true;
-            }
-
-            EP2PSend eP2PSendType = EP2PSend.k_EP2PSendReliable;
-
-            QosType qos = m_HostTopology.DefaultConfig.Channels[channelId].QOS;
-            if (qos == QosType.Unreliable || qos == QosType.UnreliableFragmented || qos == QosType.UnreliableSequenced)
-            {
-                eP2PSendType = EP2PSend.k_EP2PSendUnreliable;
-            }
-
-            if (SteamNetworking.SendP2PPacket(steamId, bytes, (uint)numBytes, eP2PSendType))
-            {
-                error = 0;
-                return true;
-            }
-            else
-            {
-                error = 1;
-                return false;
-            }
-        }
-
     }
 
 }
+
