@@ -107,7 +107,6 @@ namespace UNETSteamworks
                 return;
             }
 
-   
             uint packetSize;
 
             if (SteamNetworking.IsP2PPacketAvailable (out packetSize))
@@ -119,15 +118,6 @@ namespace UNETSteamworks
                 if (SteamNetworking.ReadP2PPacket (data, packetSize, out packetSize, out senderId)) 
                 {
                     Debug.LogError("message received (" + packetSize + "): " + System.Text.Encoding.Default.GetString(data));
-
-
-                    /*
-                    var sender = GetUnetConnectionForSteamUser(senderId);
-                    if (sender != null)
-                    {
-                        sender.TransportReceive(data, Convert.ToInt32(packetSize), 0);
-                    }
-                    */
 
                     NetworkConnection conn;
                     if (NetworkServer.active)
@@ -181,6 +171,7 @@ namespace UNETSteamworks
         {
             ConnectionConfig config = new ConnectionConfig();
             config.AddChannel(QosType.ReliableSequenced);
+            config.AddChannel(QosType.Unreliable);
             return new HostTopology(config, 2);
         }
             
@@ -367,6 +358,7 @@ namespace UNETSteamworks
 
             // spawn self
             var myConn = NetworkServer.connections[0];
+            ClientScene.Ready(myConn);
             NetworkServer.SetClientReady(myConn);
             var myplayer = GameObject.Instantiate(playerPrefab);
             NetworkServer.SpawnWithClientAuthority(myplayer, myConn);

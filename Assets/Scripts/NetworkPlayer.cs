@@ -21,8 +21,6 @@ public class NetworkPlayer : NetworkBehaviour {
     {
         base.OnStartServer();
 
-        var id = GetComponent<NetworkIdentity>();
-
         StartCoroutine(SetNameWhenReady());
     }
 
