@@ -32,7 +32,7 @@ public class NetworkPlayer : NetworkBehaviour {
             yield return null;
         }
 
-        steamId = UNETSteamworks.NetworkManager.Instance.GetSteamIDForConnection(id.clientAuthorityOwner).m_SteamID;
+        steamId = UNETSteamworks.SteamNetworkManager.Instance.GetSteamIDForConnection(id.clientAuthorityOwner).m_SteamID;
 
     }
 

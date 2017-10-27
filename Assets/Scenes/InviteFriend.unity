@@ -532,7 +532,7 @@ MonoBehaviour:
     m_HorizontalOverflow: 0
     m_VerticalOverflow: 0
     m_LineSpacing: 1
-  m_Text: Start Host
+  m_Text: Invite Friend
 --- !u!222 &591453491
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -552,7 +552,7 @@ GameObject:
   - component: {fileID: 600154653}
   - component: {fileID: 600154656}
   m_Layer: 5
-  m_Name: StartHostButton
+  m_Name: InviteFriendButton
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -670,7 +670,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 600154651}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 35ae022381d8c85439dcf8022a85b058, type: 3}
+  m_Script: {fileID: 11500000, guid: 2204311692305b9448ec2fa01d4507cb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
 --- !u!1 &913286174
@@ -1177,7 +1177,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 2102141308}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 2f999a6b902fd33428e74c65fb189308, type: 3}
+  m_Script: {fileID: 11500000, guid: 49f78835a452e96439eacc1b60a9741c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   autoInviteSteamId: 

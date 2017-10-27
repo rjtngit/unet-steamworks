@@ -9,7 +9,7 @@ using Steamworks;
 
 namespace UNETSteamworks
 {
-    public class NetworkManager : MonoBehaviour
+    public class SteamNetworkManager : MonoBehaviour
     {
         const short SpawnMsg = 1002;
 
@@ -26,7 +26,7 @@ namespace UNETSteamworks
             DISCONNECTED
         }
 
-        public static NetworkManager Instance;
+        public static SteamNetworkManager Instance;
 
         // inspector vars
         public GameObject playerPrefab;

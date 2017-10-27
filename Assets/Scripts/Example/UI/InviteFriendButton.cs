@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
-public class StartHostButton : MonoBehaviour {
+public class InviteFriendButton : MonoBehaviour {
 
     public void Start()
     {
@@ -14,8 +14,8 @@ public class StartHostButton : MonoBehaviour {
     {
         // Disable button when connection starts
         while (
-            UNETSteamworks.NetworkManager.Instance.lobbyConnectionState != UNETSteamworks.NetworkManager.SessionConnectionState.CONNECTING &&
-            UNETSteamworks.NetworkManager.Instance.lobbyConnectionState != UNETSteamworks.NetworkManager.SessionConnectionState.CONNECTED
+            UNETSteamworks.SteamNetworkManager.Instance.lobbyConnectionState != UNETSteamworks.SteamNetworkManager.SessionConnectionState.CONNECTING &&
+            UNETSteamworks.SteamNetworkManager.Instance.lobbyConnectionState != UNETSteamworks.SteamNetworkManager.SessionConnectionState.CONNECTED
         )
         {
             yield return null;
@@ -27,6 +27,6 @@ public class StartHostButton : MonoBehaviour {
     // Hooked up in Inspector 
     public void OnClick()
     {
-        UNETSteamworks.NetworkManager.Instance.CreateLobbyAndInviteFriend();
+        UNETSteamworks.SteamNetworkManager.Instance.CreateLobbyAndInviteFriend();
     }
 }
