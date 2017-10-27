@@ -103,7 +103,11 @@ public class UNETServerController {
         }
 
         Debug.Log("UNET server started");
+        InviteFriendsToLobby();
+    }
 
+    public void InviteFriendsToLobby()
+    {
         if (!string.IsNullOrEmpty(autoInviteSteamId.Trim()))
         {
             Debug.Log("Sending invite");
@@ -114,11 +118,7 @@ public class UNETServerController {
             Debug.Log("Showing invite friend dialog");
             SteamFriends.ActivateGameOverlayInviteDialog(SteamLobbyID);
         }
-
-
-        yield break;
     }
-
 
     void OnSpawnRequested(NetworkMessage msg)
     {

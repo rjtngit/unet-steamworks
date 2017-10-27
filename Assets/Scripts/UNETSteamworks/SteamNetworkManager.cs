@@ -10,7 +10,7 @@ using Steamworks;
 
 public class SteamNetworkManager : MonoBehaviour
 {
-    public const int MAX_USERS = 2;
+    public const int MAX_USERS = 4;
 
     public enum SessionConnectionState
     {
@@ -25,7 +25,8 @@ public class SteamNetworkManager : MonoBehaviour
 
     public static SteamNetworkManager Instance;
 
-    public UNETServerController UNETServerController;
+    [SerializeField] 
+    private UNETServerController UNETServerController;
     public List<GameObject> networkPrefabs;
 
     // Client-to-server connection
@@ -203,6 +204,26 @@ public class SteamNetworkManager : MonoBehaviour
         lobbyConnectionState = SessionConnectionState.CONNECTING;
         SteamMatchmaking.JoinLobby(lobbyId);
         // ...continued in OnLobbyEntered callback
+    }
+
+    public void InviteFriendsToLobby()
+    {
+        if (lobbyConnectionState == SessionConnectionState.CONNECTING)
+        {
+            // Already trying to connect...
+            return;
+        }
+
+        if (lobbyConnectionState != SessionConnectionState.CONNECTED)
+        {
+            // No lobby yet
+            CreateLobbyAndInviteFriend();
+        }
+        else
+        {
+            // Already in lobby. Invite friends to current lobby
+            UNETServerController.InviteFriendsToLobby();
+        }
     }
 
     public void CreateLobbyAndInviteFriend()
