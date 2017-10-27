@@ -13,6 +13,8 @@ namespace UNETSteamworks
     {
         const short SpawnMsg = 1002;
 
+        public string autoInviteSteamId;
+
         public enum SessionConnectionState
         {
             UNDEFINED,
@@ -274,8 +276,17 @@ namespace UNETSteamworks
                 yield return null;
             }
 
-            Debug.LogError("Showing invite friend dialog");
-            SteamFriends.ActivateGameOverlayInviteDialog(steamLobbyId);
+            if (!string.IsNullOrEmpty(autoInviteSteamId.Trim()))
+            {
+                Debug.LogError("Sending invite");
+                SteamFriends.InviteUserToGame(new CSteamID(ulong.Parse(autoInviteSteamId)), "+connect_lobby " + steamLobbyId.m_SteamID.ToString());
+            }
+            else
+            {
+                Debug.LogError("Showing invite friend dialog");
+                SteamFriends.ActivateGameOverlayInviteDialog(steamLobbyId);
+            }
+
 
             yield break;
         }
