@@ -271,6 +271,8 @@ MonoBehaviour:
   label: {fileID: 102667041839711248}
   moveSpeed: 4
   steamId: 0
+  bulletPrefab: {fileID: 1312610670525394, guid: 74327dab7a9f60c42abacfdbd26eca3e,
+    type: 2}
 --- !u!114 &114894293070458628
 MonoBehaviour:
   m_ObjectHideFlags: 1

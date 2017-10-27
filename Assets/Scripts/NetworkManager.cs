@@ -30,6 +30,7 @@ namespace UNETSteamworks
 
         // inspector vars
         public GameObject playerPrefab;
+        public List<GameObject> networkPrefabs;
 
         // unet vars
         public NetworkClient myClient { get; private set;}
@@ -53,7 +54,10 @@ namespace UNETSteamworks
             Instance = this;
             DontDestroyOnLoad(this);
 
-            ClientScene.RegisterPrefab(playerPrefab);
+            for (int i = 0; i < networkPrefabs.Count; i++)
+            {
+                ClientScene.RegisterPrefab(networkPrefabs[i]);
+            }
 
             if (SteamManager.Initialized) {
                 m_LobbyEntered = Callback<LobbyEnter_t>.Create(OnLobbyEntered);
@@ -358,7 +362,8 @@ namespace UNETSteamworks
             myClient = ClientScene.ConnectLocalServer();
             myClient.Configure(t);
             myClient.Connect("localhost", 4444);
-            myClient.connection.Initialize("localhost", 0, ++SteamNetworkConnection.nextId, t);
+            int id = ++SteamNetworkConnection.nextId;
+            myClient.connection.Initialize("localhost", id, id, t);
 
             // spawn self
             var myConn = NetworkServer.connections[0];
@@ -459,6 +464,7 @@ namespace UNETSteamworks
 
             if (conn != null)
             {
+                ClientScene.Ready(conn);
                 Debug.LogError("Requesting spawn");
                 myClient.Send(SpawnMsg, new StringMessage(SteamUser.GetSteamID().m_SteamID.ToString()));
             }

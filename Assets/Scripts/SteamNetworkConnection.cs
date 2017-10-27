@@ -27,7 +27,8 @@ namespace UNETSteamworks
 
         public void Initialize()
         {
-            Initialize(string.Empty, 0, ++nextId, m_HostTopology);
+            int id = ++nextId;
+            Initialize(string.Empty, id, id, m_HostTopology);
         }
 
         public override void Initialize(string address, int hostId, int connectionId, HostTopology hostTopology)

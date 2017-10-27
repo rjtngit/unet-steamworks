@@ -3,14 +3,19 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Networking;
 using Steamworks;
+using UnityEngine.Networking.NetworkSystem;
 
 public class NetworkPlayer : NetworkBehaviour {
+
+    const short RequestFire = 2002;
 
     public TextMesh label;
     public float moveSpeed;
 
     [SyncVar]
     public ulong steamId;
+
+    public GameObject bulletPrefab;
 
     public override void OnStartServer()
     {
@@ -38,8 +43,13 @@ public class NetworkPlayer : NetworkBehaviour {
     {
         if (hasAuthority)
         {
-            var inputMovement = new Vector3( Input.GetAxis("Horizontal"), 0, Input.GetAxis("Vertical") );
-            transform.Translate(inputMovement*Time.deltaTime*moveSpeed, Space.World);
+            var input = new Vector3( Input.GetAxis("Horizontal"), 0, Input.GetAxis("Vertical") );
+            transform.Translate(input * Time.deltaTime*moveSpeed, Space.World);
+
+            if (Input.GetButtonDown("Fire1"))
+            {
+                CmdFire();
+            }
         }
       
         GetComponent<Rigidbody>().isKinematic = !hasAuthority;
@@ -47,4 +57,18 @@ public class NetworkPlayer : NetworkBehaviour {
         label.text = SteamFriends.GetFriendPersonaName(new CSteamID(steamId));
 
     }
+        
+
+    [Command]
+    public void CmdFire()
+    {
+        if (NetworkServer.active)
+        {
+            var bullet = GameObject.Instantiate(bulletPrefab, transform.position, Quaternion.identity);
+            NetworkServer.Spawn(bullet);
+        }
+    
+    }
+
+
 }
