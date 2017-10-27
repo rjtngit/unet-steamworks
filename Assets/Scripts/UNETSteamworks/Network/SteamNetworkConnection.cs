@@ -50,7 +50,6 @@ namespace UNETSteamworks
                 // sending to self. short circuit
                 TransportReceive(bytes, numBytes, channelId);
                 error = 0;
-                Debug.LogError("TransportSend - short circuit to self");
                 return true;
             }
 
@@ -65,25 +64,15 @@ namespace UNETSteamworks
             if (SteamNetworking.SendP2PPacket(steamId, bytes, (uint)numBytes, eP2PSendType))
             {
                 error = 0;
-                Debug.LogError("TransportSend - to other client");
                 return true;
             }
             else
             {
                 error = 1;
-                Debug.LogError("TransportSend - failed");
-
                 return false;
             }
         }
-     
 
-        public override void TransportReceive(byte[] bytes, int numBytes, int channelId)
-        {
-            Debug.LogError("TransportReceive");
-
-            base.TransportReceive(bytes, numBytes, channelId);
-        }
     }
 
 }

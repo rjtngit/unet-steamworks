@@ -7,15 +7,14 @@ using UnityEngine.Networking.NetworkSystem;
 
 public class NetworkPlayer : NetworkBehaviour {
 
-    const short RequestFire = 2002;
+    const short RequestFireMsg = 2002;
 
+    public GameObject bulletPrefab;
     public TextMesh label;
     public float moveSpeed;
 
     [SyncVar]
     public ulong steamId;
-
-    public GameObject bulletPrefab;
 
     public override void OnStartServer()
     {
@@ -26,8 +25,8 @@ public class NetworkPlayer : NetworkBehaviour {
 
     IEnumerator SetNameWhenReady()
     {
+        // Wait for client to get authority, then retrieve the player's Steam ID
         var id = GetComponent<NetworkIdentity>();
-
         while (id.clientAuthorityOwner == null)
         {
             yield return null;
@@ -41,6 +40,7 @@ public class NetworkPlayer : NetworkBehaviour {
     {
         if (hasAuthority)
         {
+            // Only allow input for client with authority 
             var input = new Vector3( Input.GetAxis("Horizontal"), 0, Input.GetAxis("Vertical") );
             transform.Translate(input * Time.deltaTime*moveSpeed, Space.World);
 
@@ -50,8 +50,10 @@ public class NetworkPlayer : NetworkBehaviour {
             }
         }
       
+        // Disable physics for peer objects
         GetComponent<Rigidbody>().isKinematic = !hasAuthority;
 
+        // Update player name
         label.text = SteamFriends.GetFriendPersonaName(new CSteamID(steamId));
 
     }

@@ -66,7 +66,7 @@ namespace UNETSteamworks
 
             }
            
-            LogFilter.currentLogLevel = 0;
+            LogFilter.currentLogLevel = LogFilter.Info;
         }
 
         void Start()
@@ -117,8 +117,6 @@ namespace UNETSteamworks
 
                 if (SteamNetworking.ReadP2PPacket (data, packetSize, out packetSize, out senderId)) 
                 {
-                    Debug.LogError("message received (" + packetSize + "): " + System.Text.Encoding.Default.GetString(data));
-
                     NetworkConnection conn;
                     if (NetworkServer.active)
                     {
@@ -229,7 +227,7 @@ namespace UNETSteamworks
 
             steamLobbyId = new CSteamID(pCallback.m_ulSteamIDLobby);
 
-            Debug.LogError("Connected to lobby");
+            Debug.Log("Connected to lobby");
             lobbyConnectionState = SessionConnectionState.CONNECTED;
 
             var host = SteamMatchmaking.GetLobbyOwner(steamLobbyId);
@@ -247,7 +245,7 @@ namespace UNETSteamworks
                 // joined friend's lobby.
                 JoinFriendTriggered = false;
 
-                Debug.LogError("Sending packet to request p2p connection");
+                Debug.Log("Sending packet to request p2p connection");
 
                 //send packet to request connection to host via Steam's NAT punch or relay servers
                 SteamNetworking.SendP2PPacket (host, null, 0, EP2PSend.k_EP2PSendReliable);
@@ -263,7 +261,7 @@ namespace UNETSteamworks
         #region host
         IEnumerator DoShowInviteDialogWhenReady()
         {
-            Debug.LogError("Waiting for unet server to start");
+            Debug.Log("Waiting for UNET server to start");
 
             while (!NetworkServer.active) 
             {
@@ -271,14 +269,16 @@ namespace UNETSteamworks
                 yield return null;
             }
 
+            Debug.Log("UNET started");
+
             if (!string.IsNullOrEmpty(autoInviteSteamId.Trim()))
             {
-                Debug.LogError("Sending invite");
+                Debug.Log("Sending invite");
                 SteamFriends.InviteUserToGame(new CSteamID(ulong.Parse(autoInviteSteamId)), "+connect_lobby " + steamLobbyId.m_SteamID.ToString());
             }
             else
             {
-                Debug.LogError("Showing invite friend dialog");
+                Debug.Log("Showing invite friend dialog");
                 SteamFriends.ActivateGameOverlayInviteDialog(steamLobbyId);
             }
 
@@ -289,7 +289,7 @@ namespace UNETSteamworks
 
         void OnP2PSessionRequested(P2PSessionRequest_t pCallback)
         {
-            Debug.LogError("P2P session request received");
+            Debug.Log("P2P session request received");
 
             if (NetworkServer.active && SteamManager.Initialized) 
             {
@@ -302,7 +302,8 @@ namespace UNETSteamworks
 
                     if (member.m_SteamID == pCallback.m_steamIDRemote.m_SteamID)
                     {
-                        Debug.LogError("Sending P2P acceptance message");
+                        Debug.Log("P2P connection established");
+                        Debug.Log("Sending P2P acceptance message");
                         p2pConnectionEstablished = true;
 
                         SteamNetworking.AcceptP2PSessionWithUser (pCallback.m_steamIDRemote);
@@ -339,7 +340,7 @@ namespace UNETSteamworks
 
         void StartUnetServerForSteam()
         {
-            Debug.LogError("Starting unet server");
+            Debug.Log("Starting UNET server");
 
             var t = CreateTopology();
 
@@ -368,7 +369,7 @@ namespace UNETSteamworks
 
         void OnSpawnRequested(NetworkMessage msg)
         {
-            Debug.LogError("Spawn request received");
+            Debug.Log("Spawn request received");
 
             // spawn peer
             var conn = GetConnections()[1];
@@ -377,7 +378,7 @@ namespace UNETSteamworks
             var player = GameObject.Instantiate(playerPrefab);
 
             bool spawned = NetworkServer.SpawnWithClientAuthority(player, conn);
-            Debug.LogError(spawned ? "Spawned player" :"Failed to spawn player");
+            Debug.Log(spawned ? "Spawned player" :"Failed to spawn player");
         }
 
         #endregion
@@ -385,7 +386,7 @@ namespace UNETSteamworks
         #region client
         IEnumerator DoWaitForP2PSessionAcceptedAndConnect()
         {
-            Debug.LogError("Waiting for P2P acceptance message");
+            Debug.Log("Waiting for P2P acceptance message");
 
             uint packetSize;
             while (!SteamNetworking.IsP2PPacketAvailable (out packetSize)) {
@@ -401,7 +402,7 @@ namespace UNETSteamworks
                 var host = SteamMatchmaking.GetLobbyOwner (steamLobbyId);
                 if (senderId.m_SteamID == host.m_SteamID)
                 {
-                    Debug.LogError("P2P connection accepted");
+                    Debug.Log("P2P connection established");
                     p2pConnectionEstablished = true;
 
                     // packet was from host, assume it's notifying client that AcceptP2PSessionWithUser was called
@@ -430,7 +431,7 @@ namespace UNETSteamworks
 
         void ConnectToUnetServerForSteam(CSteamID hostSteamId)
         {
-            Debug.LogError("Connecting to Unet server");
+            Debug.Log("Connecting to UNET server");
 
             var t = CreateTopology();
 
@@ -449,7 +450,7 @@ namespace UNETSteamworks
 
         void OnConnect(NetworkMessage msg)
         {
-            Debug.LogError("Connected to unet server.");
+            Debug.Log("Connected to UNET server.");
             myClient.UnregisterHandler(MsgType.Connect);
 
             var conn = myClient.connection as SteamNetworkConnection;
@@ -457,7 +458,7 @@ namespace UNETSteamworks
             if (conn != null)
             {
                 ClientScene.Ready(conn);
-                Debug.LogError("Requesting spawn");
+                Debug.Log("Requesting spawn");
                 myClient.Send(SpawnMsg, new StringMessage(SteamUser.GetSteamID().m_SteamID.ToString()));
             }
 
