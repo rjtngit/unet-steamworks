@@ -245,7 +245,7 @@ namespace UNETSteamworks
                 // joined friend's lobby.
                 JoinFriendTriggered = false;
 
-                Debug.Log("Sending packet to request p2p connection");
+                Debug.Log("Sending packet to request P2P connection");
 
                 //send packet to request connection to host via Steam's NAT punch or relay servers
                 SteamNetworking.SendP2PPacket (host, null, 0, EP2PSend.k_EP2PSendReliable);
@@ -348,12 +348,12 @@ namespace UNETSteamworks
 
             NetworkServer.Configure(t);
             NetworkServer.dontListen = true;
-            NetworkServer.Listen(4444);
+            NetworkServer.Listen(0);
 
             // create a connection to represent the server
             myClient = ClientScene.ConnectLocalServer();
             myClient.Configure(t);
-            myClient.Connect("localhost", 4444);
+            myClient.Connect("localhost", 0);
             int id = ++SteamNetworkConnection.nextId;
             myClient.connection.Initialize("localhost", id, id, t);
 

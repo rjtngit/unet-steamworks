@@ -18,7 +18,7 @@ namespace UNETSteamworks
 
         public void Connect()
         {
-            Connect("localhost", 4444);
+            Connect("localhost", 0);
 
             m_AsyncConnect = ConnectState.Connected;
 
