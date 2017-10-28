@@ -180,7 +180,7 @@ public class UNETServerController {
                     SteamNetworking.SendP2PPacket (pCallback.m_steamIDRemote, null, 0, EP2PSend.k_EP2PSendReliable);
 
                     // create new connnection for this client and connect them to server
-                    var newConn = new SteamNetworkConnection(member, SteamNetworkManager.hostTopology);
+                    var newConn = new SteamNetworkConnection(member);
                     newConn.ForceInitialize();
 
                     NetworkServer.AddExternalConnection(newConn);

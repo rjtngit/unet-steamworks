@@ -6,7 +6,7 @@ using System.Net;
 using UnityEngine.Networking.NetworkSystem;
 using System;
 using Steamworks;
-
+ 
 
 public class SteamNetworkManager : MonoBehaviour
 {
@@ -313,7 +313,7 @@ public class SteamNetworkManager : MonoBehaviour
         Debug.Log("Connecting to UNET server");
 
         // Create connection to host player's steam ID
-        var conn = new SteamNetworkConnection(hostSteamId, SteamNetworkManager.hostTopology);
+        var conn = new SteamNetworkConnection(hostSteamId);
         var mySteamClient = new SteamNetworkClient(conn);
         this.myClient = mySteamClient;
 

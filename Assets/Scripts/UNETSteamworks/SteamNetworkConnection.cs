@@ -14,7 +14,7 @@ public class SteamNetworkConnection : NetworkConnection
     {
     }
 
-    public SteamNetworkConnection(CSteamID steamId, HostTopology hostTopology)
+    public SteamNetworkConnection(CSteamID steamId)
     {
         this.steamId = steamId;
     }
