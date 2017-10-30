@@ -81,15 +81,14 @@ public class UNETServerController {
         myClient.Connect("localhost", 0);
         myClient.connection.ForceInitialize();
 
-        // Spawn self. Here we get the connection from the NetworkServer because it represents the server-to-client connection
+        // Add local client to server's list of connections
+        // Here we get the connection from the NetworkServer because it represents the server-to-client connection
         var serverToClientConn = NetworkServer.connections[0];
-        ClientScene.Ready(serverToClientConn);
-        NetworkServer.SetClientReady(serverToClientConn);
-        var myplayer = GameObject.Instantiate(playerPrefab);
-        NetworkServer.SpawnWithClientAuthority(myplayer, serverToClientConn);
-
-        // add local client to server's list of connections
         AddConnection(serverToClientConn);
+
+        // Spawn self
+        ClientScene.Ready(serverToClientConn);
+        SpawnPlayer(serverToClientConn);
     }
 
     IEnumerator DoShowInviteDialogWhenReady()
@@ -120,10 +119,17 @@ public class UNETServerController {
         }
     }
 
+    bool SpawnPlayer(NetworkConnection conn)
+    {
+        NetworkServer.SetClientReady(conn);
+        var player = GameObject.Instantiate(playerPrefab);
+
+        return NetworkServer.SpawnWithClientAuthority(player, conn);
+    }
+
     void OnSpawnRequested(NetworkMessage msg)
     {
         Debug.Log("Spawn request received");
-        bool spawnSuccess = false;
 
         // Read the contents of this message. It should contain the steam ID of the sender
         var strMsg = msg.ReadMessage<StringMessage>();
@@ -137,25 +143,17 @@ public class UNETServerController {
                 if (conn != null)
                 {
                     // spawn peer
-                    NetworkServer.SetClientReady(conn);
-                    var player = GameObject.Instantiate(playerPrefab);
-
-                    spawnSuccess = NetworkServer.SpawnWithClientAuthority(player, conn);
+                    if (SpawnPlayer(conn))
+                    {
+                        Debug.Log("Spawned player");
+                        return;
+                    }
                 }
             }
-
         }
 
-        if (spawnSuccess)
-        {
-            Debug.Log("Spawned player");
-        }
-        else
-        {
-            Debug.LogError("Failed to spawn player");
-        }
+        Debug.LogError("Failed to spawn player");
     }
-
 
 
     void OnP2PSessionRequested(P2PSessionRequest_t pCallback)
