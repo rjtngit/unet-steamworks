@@ -259,22 +259,21 @@ public class SteamNetworkManager : MonoBehaviour
         else
         {
             // joined friend's lobby.
-            Debug.Log("Sending packet to request P2P connection");
-
-            //send packet to request connection to host via Steam's NAT punch or relay servers
-            SteamNetworking.SendP2PPacket (hostUserId, null, 0, EP2PSend.k_EP2PSendReliable);
-
-            StartCoroutine (DoWaitForP2PSessionAcceptedAndConnect ());
-
+            StartCoroutine (RequestP2PConnectionWithHost ());
         }
 
 
     }
         
-    IEnumerator DoWaitForP2PSessionAcceptedAndConnect()
+    IEnumerator RequestP2PConnectionWithHost()
     {
-        Debug.Log("Waiting for P2P acceptance message");
+        var hostUserId = SteamMatchmaking.GetLobbyOwner (steamLobbyId);
 
+        //send packet to request connection to host via Steam's NAT punch or relay servers
+        Debug.Log("Sending packet to request P2P connection");
+        SteamNetworking.SendP2PPacket (hostUserId, null, 0, EP2PSend.k_EP2PSendReliable);
+
+        Debug.Log("Waiting for P2P acceptance message");
         uint packetSize;
         while (!SteamNetworking.IsP2PPacketAvailable (out packetSize)) {
             yield return null;
@@ -286,7 +285,6 @@ public class SteamNetworkManager : MonoBehaviour
 
         if (SteamNetworking.ReadP2PPacket (data, packetSize, out packetSize, out senderId)) 
         {
-            var hostUserId = SteamMatchmaking.GetLobbyOwner (steamLobbyId);
             if (senderId.m_SteamID == hostUserId.m_SteamID)
             {
                 Debug.Log("P2P connection established");
