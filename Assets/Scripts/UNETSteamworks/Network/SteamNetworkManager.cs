@@ -304,6 +304,7 @@ public class SteamNetworkManager : MonoBehaviour
 
             UNETServerController.inviteFriendOnStart = false;
             SteamMatchmaking.CreateLobby(ELobbyType.k_ELobbyTypePublic, MAX_USERS);
+            // ...continued in OnLobbyEntered callback
         }
         else
         {
