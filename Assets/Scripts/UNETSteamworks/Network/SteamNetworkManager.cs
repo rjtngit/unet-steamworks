@@ -39,6 +39,7 @@ public class SteamNetworkManager : MonoBehaviour
     // callbacks
     private Callback<LobbyEnter_t> m_LobbyEntered;
     private Callback<GameLobbyJoinRequested_t> m_GameLobbyJoinRequested;
+    private CallResult<LobbyMatchList_t> m_LobbyMatchList;
 
     private static HostTopology m_hostTopology = null;
     public static HostTopology hostTopology
@@ -73,6 +74,7 @@ public class SteamNetworkManager : MonoBehaviour
         if (SteamManager.Initialized) {
             m_LobbyEntered = Callback<LobbyEnter_t>.Create(OnLobbyEntered);
             m_GameLobbyJoinRequested = Callback<GameLobbyJoinRequested_t>.Create (OnGameLobbyJoinRequested);
+            m_LobbyMatchList = CallResult<LobbyMatchList_t>.Create(OnLobbyMatchList);
 
         }
 
@@ -96,7 +98,7 @@ public class SteamNetworkManager : MonoBehaviour
 
             if (ulong.TryParse(input, out lobbyId))
             {
-                JoinFriendLobby(new CSteamID(lobbyId));
+                JoinLobby(new CSteamID(lobbyId));
             }
 
         }
@@ -131,6 +133,18 @@ public class SteamNetworkManager : MonoBehaviour
                 {
                     // We are the server, one of our clients will handle this packet
                     conn = UNETServerController.GetClient(senderId);
+
+                    #if UNITY_EDITOR
+                    // Steam always thinks you are in-game when running in Unity editor.
+                    // This can cause the P2P session to persist after exiting playmode, which means UNETServerController.OnP2PSessionRequested is never called again unless you restart Steam and Unity
+                    // As a workaround, we assume the P2P connection has already been accepted if the sender is in the lobby but missing from the UNETServerController
+                    if (conn == null && IsMemberInSteamLobby(senderId))
+                    {
+                        Debug.Log("Running in Unity editor, P2P connection is still established on this machine. Sending acceptance message.");
+                        UNETServerController.CreateP2PConnectionWithPeer(senderId);
+                        conn = UNETServerController.GetClient(senderId);
+                    }
+                    #endif
                 }
                 else
                 {
@@ -147,6 +161,26 @@ public class SteamNetworkManager : MonoBehaviour
             }
         }
 
+    }
+
+    public bool IsMemberInSteamLobby(CSteamID steamUser)
+    {
+        if (SteamManager.Initialized) 
+        {
+            int numMembers = SteamMatchmaking.GetNumLobbyMembers(steamLobbyId);
+
+            for (int i = 0; i < numMembers; i++) 
+            {
+                var member = SteamMatchmaking.GetLobbyMemberByIndex (steamLobbyId, i);
+
+                if (member.m_SteamID == steamUser.m_SteamID)
+                {
+                    return true;
+                }
+            }
+        }
+
+        return false;
     }
 
     public CSteamID GetSteamIDForConnection(NetworkConnection conn)
@@ -178,6 +212,11 @@ public class SteamNetworkManager : MonoBehaviour
     {
         lobbyConnectionState = SessionConnectionState.DISCONNECTED;
 
+        if (SteamManager.Initialized)
+        {
+            SteamMatchmaking.LeaveLobby(steamLobbyId);
+        }
+
         UNETServerController.Disconnect();
 
         if (myClient != null)
@@ -191,10 +230,10 @@ public class SteamNetworkManager : MonoBehaviour
     void OnGameLobbyJoinRequested(GameLobbyJoinRequested_t pCallback)
     {
         // Invite accepted, game is already running
-        JoinFriendLobby(pCallback.m_steamIDLobby);
+        JoinLobby(pCallback.m_steamIDLobby);
     }
 
-    public void JoinFriendLobby(CSteamID lobbyId)
+    public void JoinLobby(CSteamID lobbyId)
     {
         if (!SteamManager.Initialized) {
             lobbyConnectionState = SessionConnectionState.FAILED;
@@ -233,9 +272,49 @@ public class SteamNetworkManager : MonoBehaviour
             return;
         }
 
+        UNETServerController.inviteFriendOnStart = true;
         lobbyConnectionState = SessionConnectionState.CONNECTING;
         SteamMatchmaking.CreateLobby(ELobbyType.k_ELobbyTypePrivate, MAX_USERS);
         // ...continued in OnLobbyEntered callback
+    }
+
+    public void FindMatch()
+    {
+        if (!SteamManager.Initialized) {
+            lobbyConnectionState = SessionConnectionState.FAILED;
+            return;
+        }
+
+        lobbyConnectionState = SessionConnectionState.CONNECTING;
+
+        //Note: call SteamMatchmaking.AddRequestLobbyList* before RequestLobbyList to filter results by some criteria
+        SteamMatchmaking.AddRequestLobbyListStringFilter("game", "spacewave-unet-p2p-example", ELobbyComparison.k_ELobbyComparisonEqual);
+        var call = SteamMatchmaking.RequestLobbyList();
+        m_LobbyMatchList.Set(call, OnLobbyMatchList);
+    }
+
+    void OnLobbyMatchList(LobbyMatchList_t pCallback, bool bIOFailure)
+    {
+        uint numLobbies = pCallback.m_nLobbiesMatching;
+
+        if (numLobbies <= 0)
+        {
+            // no lobbies found. create one
+            Debug.Log("Creating lobby"); 
+
+            UNETServerController.inviteFriendOnStart = false;
+            SteamMatchmaking.CreateLobby(ELobbyType.k_ELobbyTypePublic, MAX_USERS);
+        }
+        else
+        {
+            // If multiple lobbies are returned we can interate over them with SteamMatchmaking.GetLobbyByIndex and choose the "best" one
+            // In this case we are just joining the first one
+            Debug.Log("Joining lobby");
+            var lobby = SteamMatchmaking.GetLobbyByIndex(0);
+            JoinLobby(lobby);
+        }
+
+
     }
 
     void OnLobbyEntered(LobbyEnter_t pCallback)
@@ -254,7 +333,8 @@ public class SteamNetworkManager : MonoBehaviour
         var me = SteamUser.GetSteamID();
         if (hostUserId.m_SteamID == me.m_SteamID)
         {
-            UNETServerController.StartUNETServerAndInviteFriend();
+            SteamMatchmaking.SetLobbyData(steamLobbyId, "game", "spacewave-unet-p2p-example");
+            UNETServerController.StartUNETServer();
         }
         else
         {

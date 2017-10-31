@@ -18,6 +18,10 @@ public class UNETServerController {
     // Steamworks callbacks
     private Callback<P2PSessionRequest_t> m_P2PSessionRequested;
 
+    // state vars
+    [HideInInspector]
+    public bool inviteFriendOnStart = false;
+
     /// local client-to-server connection
     public NetworkClient myClient
     {
@@ -47,7 +51,7 @@ public class UNETServerController {
         }
     }
 
-    public void StartUNETServerAndInviteFriend()
+    public void StartUNETServer()
     {
         if (SteamNetworkManager.Instance.lobbyConnectionState != SteamNetworkManager.SessionConnectionState.CONNECTED)
         {
@@ -55,15 +59,6 @@ public class UNETServerController {
             return;
         }
 
-        // lobby created. start UNET server
-        StartUNETServer();
-
-        // prompt to invite friend
-        SteamNetworkManager.Instance.StartCoroutine (DoShowInviteDialogWhenReady ());
-    }
-
-    void StartUNETServer()
-    {
         Debug.Log("Starting UNET server");
 
         // Listen for player spawn request messages 
@@ -89,6 +84,12 @@ public class UNETServerController {
         // Spawn self
         ClientScene.Ready(serverToClientConn);
         SpawnPlayer(serverToClientConn);
+
+        if (inviteFriendOnStart)
+        {
+            // prompt to invite friend
+            SteamNetworkManager.Instance.StartCoroutine (DoShowInviteDialogWhenReady ());
+        }
     }
 
     IEnumerator DoShowInviteDialogWhenReady()
@@ -160,34 +161,30 @@ public class UNETServerController {
     {
         Debug.Log("P2P session request received");
 
-        if (NetworkServer.active && SteamManager.Initialized) 
+        var member = pCallback.m_steamIDRemote;
+
+        if (NetworkServer.active && SteamNetworkManager.Instance.IsMemberInSteamLobby(member))
         {
             // Accept the connection if this user is in the lobby
-            int numMembers = SteamMatchmaking.GetNumLobbyMembers(SteamLobbyID);
+            Debug.Log("P2P connection accepted");
+            SteamNetworking.AcceptP2PSessionWithUser (member);
 
-            for (int i = 0; i < numMembers; i++) 
-            {
-                var member = SteamMatchmaking.GetLobbyMemberByIndex (SteamLobbyID, i);
-
-                if (member.m_SteamID == pCallback.m_steamIDRemote.m_SteamID)
-                {
-                    Debug.Log("P2P connection established");
-                    Debug.Log("Sending P2P acceptance message");
-
-                    SteamNetworking.AcceptP2PSessionWithUser (pCallback.m_steamIDRemote);
-                    SteamNetworking.SendP2PPacket (pCallback.m_steamIDRemote, null, 0, EP2PSend.k_EP2PSendReliable);
-
-                    // create new connnection for this client and connect them to server
-                    var newConn = new SteamNetworkConnection(member);
-                    newConn.ForceInitialize();
-
-                    NetworkServer.AddExternalConnection(newConn);
-                    AddConnection(newConn);
-
-                    return;
-                }
-            }
+            CreateP2PConnectionWithPeer(member);
         }
+
+    }
+
+    public void CreateP2PConnectionWithPeer(CSteamID peer)
+    {
+        Debug.Log("Sending P2P acceptance message and creating remote client reference for UNET server");
+        SteamNetworking.SendP2PPacket (peer, null, 0, EP2PSend.k_EP2PSendReliable);
+
+        // create new connnection for this client and connect them to server
+        var newConn = new SteamNetworkConnection(peer);
+        newConn.ForceInitialize();
+
+        NetworkServer.AddExternalConnection(newConn);
+        AddConnection(newConn);
 
     }
 
@@ -202,6 +199,18 @@ public class UNETServerController {
         if (NetworkServer.active)
         {
             NetworkServer.Shutdown();
+        }
+
+        for(int i =0; i < connectedClients.Count; i++)
+        {
+            var steamConn = connectedClients[i] as SteamNetworkConnection;
+            if (steamConn != null)
+            {
+                if (SteamManager.Initialized)
+                {
+                    SteamNetworking.CloseP2PSessionWithUser(steamConn.steamId);
+                }
+            }
         }
 
         connectedClients.Clear();
