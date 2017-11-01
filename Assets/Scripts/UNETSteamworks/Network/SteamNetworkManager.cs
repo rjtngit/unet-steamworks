@@ -308,7 +308,7 @@ public class SteamNetworkManager : MonoBehaviour
         }
         else
         {
-            // If multiple lobbies are returned we can interate over them with SteamMatchmaking.GetLobbyByIndex and choose the "best" one
+            // If multiple lobbies are returned we can iterate over them with SteamMatchmaking.GetLobbyByIndex and choose the "best" one
             // In this case we are just joining the first one
             Debug.Log("Joining lobby");
             var lobby = SteamMatchmaking.GetLobbyByIndex(0);
