@@ -11,6 +11,7 @@ using Steamworks;
 public class SteamNetworkManager : MonoBehaviour
 {
     public const int MAX_USERS = 4;
+    public const string GAME_ID = "spacewave-unet-p2p-example"; // Unique identifier for matchmaking so we don't match up with other Spacewar games
 
     public enum SessionConnectionState
     {
@@ -288,7 +289,7 @@ public class SteamNetworkManager : MonoBehaviour
         lobbyConnectionState = SessionConnectionState.CONNECTING;
 
         //Note: call SteamMatchmaking.AddRequestLobbyList* before RequestLobbyList to filter results by some criteria
-        SteamMatchmaking.AddRequestLobbyListStringFilter("game", "spacewave-unet-p2p-example", ELobbyComparison.k_ELobbyComparisonEqual);
+        SteamMatchmaking.AddRequestLobbyListStringFilter("game", GAME_ID, ELobbyComparison.k_ELobbyComparisonEqual);
         var call = SteamMatchmaking.RequestLobbyList();
         m_LobbyMatchList.Set(call, OnLobbyMatchList);
     }
@@ -334,7 +335,7 @@ public class SteamNetworkManager : MonoBehaviour
         var me = SteamUser.GetSteamID();
         if (hostUserId.m_SteamID == me.m_SteamID)
         {
-            SteamMatchmaking.SetLobbyData(steamLobbyId, "game", "spacewave-unet-p2p-example");
+            SteamMatchmaking.SetLobbyData(steamLobbyId, "game", GAME_ID);
             UNETServerController.StartUNETServer();
         }
         else
