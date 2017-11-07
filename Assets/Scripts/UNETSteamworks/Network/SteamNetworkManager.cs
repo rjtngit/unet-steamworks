@@ -120,7 +120,7 @@ public class SteamNetworkManager : MonoBehaviour
         uint packetSize;
 
         // Read Steam packets
-        if (SteamNetworking.IsP2PPacketAvailable (out packetSize))
+        while (SteamNetworking.IsP2PPacketAvailable (out packetSize))
         {
             byte[] data = new byte[packetSize];
 
