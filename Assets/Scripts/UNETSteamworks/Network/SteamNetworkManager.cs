@@ -60,6 +60,11 @@ public class SteamNetworkManager : MonoBehaviour
         }
     }
 
+    public static int GetChannelCount()
+    {
+        return hostTopology.DefaultConfig.Channels.Count;
+    }
+
     void Awake()
     {
         Instance = this;
@@ -118,49 +123,53 @@ public class SteamNetworkManager : MonoBehaviour
         }
 
         uint packetSize;
+        int channels = GetChannelCount();
 
         // Read Steam packets
-        while (SteamNetworking.IsP2PPacketAvailable (out packetSize))
+        for (int chan = 0; chan < channels; chan++)
         {
-            byte[] data = new byte[packetSize];
-
-            CSteamID senderId;
-
-            if (SteamNetworking.ReadP2PPacket (data, packetSize, out packetSize, out senderId)) 
+            while (SteamNetworking.IsP2PPacketAvailable (out packetSize, chan))
             {
-                NetworkConnection conn;
+                byte[] data = new byte[packetSize];
 
-                if (UNETServerController.IsHostingServer())
+                CSteamID senderId;
+
+                if (SteamNetworking.ReadP2PPacket (data, packetSize, out packetSize, out senderId, chan)) 
                 {
-                    // We are the server, one of our clients will handle this packet
-                    conn = UNETServerController.GetClient(senderId);
+                    NetworkConnection conn;
 
-                    if (conn == null)
+                    if (UNETServerController.IsHostingServer())
                     {
-                        // In some cases the p2p connection can persist, resulting in UNETServerController.OnP2PSessionRequested not being called. This happens usually when testing in editor.
-                        // If the peers have already established a connection, reset it.
-                        P2PSessionState_t sessionState;
-                        if (SteamNetworking.GetP2PSessionState(senderId, out sessionState) && Convert.ToBoolean(sessionState.m_bConnectionActive))
+                        // We are the server, one of our clients will handle this packet
+                        conn = UNETServerController.GetClient(senderId);
+
+                        if (conn == null)
                         {
-                            Debug.Log("P2P connection is still established. Resetting.");
-                            SteamNetworking.CloseP2PSessionWithUser(senderId);
-                            UNETServerController.CreateP2PConnectionWithPeer(senderId);
-                            conn = UNETServerController.GetClient(senderId);
+                            // In some cases the p2p connection can persist, resulting in UNETServerController.OnP2PSessionRequested not being called. This happens usually when testing in editor.
+                            // If the peers have already established a connection, reset it.
+                            P2PSessionState_t sessionState;
+                            if (SteamNetworking.GetP2PSessionState(senderId, out sessionState) && Convert.ToBoolean(sessionState.m_bConnectionActive))
+                            {
+                                Debug.Log("P2P connection is still established. Resetting.");
+                                SteamNetworking.CloseP2PSessionWithUser(senderId);
+                                UNETServerController.CreateP2PConnectionWithPeer(senderId);
+                                conn = UNETServerController.GetClient(senderId);
+                            }
                         }
                     }
-                }
-                else
-                {
-                    // We are a client, we only have one connection (the server).
-                    conn = myClient.connection;
-                }
+                    else
+                    {
+                        // We are a client, we only have one connection (the server).
+                        conn = myClient.connection;
+                    }
 
-                if (conn != null)
-                {
-                    // Handle Steam packet through UNET
-                    conn.TransportReceive(data, Convert.ToInt32(packetSize), 0);
-                }
+                    if (conn != null)
+                    {
+                        // Handle Steam packet through UNET
+                        conn.TransportReceive(data, Convert.ToInt32(packetSize), chan);
+                    }
 
+                }
             }
         }
 

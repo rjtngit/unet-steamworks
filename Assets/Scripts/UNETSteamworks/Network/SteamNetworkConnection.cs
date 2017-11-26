@@ -38,7 +38,7 @@ public class SteamNetworkConnection : NetworkConnection
         }
 
         // Send packet to peer through Steam
-        if (SteamNetworking.SendP2PPacket(steamId, bytes, (uint)numBytes, eP2PSendType))
+        if (SteamNetworking.SendP2PPacket(steamId, bytes, (uint)numBytes, eP2PSendType, channelId))
         {
             error = 0;
             return true;
