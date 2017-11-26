@@ -81,6 +81,10 @@ public class UNETServerController {
         var serverToClientConn = NetworkServer.connections[0];
         AddConnection(serverToClientConn);
 
+        // register networked prefabs
+        SteamNetworkManager.Instance.RegisterNetworkPrefabs();
+
+
         // Spawn self
         ClientScene.Ready(serverToClientConn);
         SpawnPlayer(serverToClientConn);
@@ -126,6 +130,19 @@ public class UNETServerController {
         var player = GameObject.Instantiate(playerPrefab);
 
         return NetworkServer.SpawnWithClientAuthority(player, conn);
+    }
+
+    void DestroyPlayer(NetworkConnection conn)
+    {
+        // quick and dirty hack to destroy a player. GameObject.FindObjectsOfType probably shouldn't be used here.
+        var objs = GameObject.FindObjectsOfType<NetworkIdentity>();
+        for (int i = 0; i < objs.Length; i++)
+        {
+            if (objs[i].connectionToClient.connectionId == conn.connectionId)
+            {
+                NetworkServer.Destroy(objs[i].gameObject);
+            }
+        }
     }
 
     void OnSpawnRequested(NetworkMessage msg)
@@ -238,6 +255,7 @@ public class UNETServerController {
                 steamConn.CloseP2PSession();
             }
 
+            DestroyPlayer(conn);
             connectedClients.Remove(conn);
 
             conn.hostId = -1;

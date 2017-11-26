@@ -73,11 +73,6 @@ public class SteamNetworkManager : MonoBehaviour
 
         LogFilter.currentLogLevel = LogFilter.Info;
 
-        for (int i = 0; i < networkPrefabs.Count; i++)
-        {
-            ClientScene.RegisterPrefab(networkPrefabs[i]);
-        }
-
         if (SteamManager.Initialized) {
             m_LobbyEntered = Callback<LobbyEnter_t>.Create(OnLobbyEntered);
             m_GameLobbyJoinRequested = Callback<GameLobbyJoinRequested_t>.Create (OnGameLobbyJoinRequested);
@@ -175,6 +170,19 @@ public class SteamNetworkManager : MonoBehaviour
             }
         }
 
+        if (Input.GetKeyDown(KeyCode.Escape))
+        {
+            Disconnect();
+        }
+
+    }
+
+    public void RegisterNetworkPrefabs()
+    {
+        for (int i = 0; i < networkPrefabs.Count; i++)
+        {
+            ClientScene.RegisterPrefab(networkPrefabs[i]);
+        }
     }
 
     public bool IsMemberInSteamLobby(CSteamID steamUser)
@@ -225,6 +233,8 @@ public class SteamNetworkManager : MonoBehaviour
     public void Disconnect()
     {
         lobbyConnectionState = SessionConnectionState.DISCONNECTED;
+
+        ClientScene.DestroyAllClientObjects();
 
         if (SteamManager.Initialized)
         {
@@ -444,6 +454,8 @@ public class SteamNetworkManager : MonoBehaviour
         // Set to ready and spawn player
         Debug.Log("Connected to UNET server.");
         myClient.UnregisterHandler(MsgType.Connect);
+
+        RegisterNetworkPrefabs();
 
         var conn = myClient.connection;
         if (conn != null)
