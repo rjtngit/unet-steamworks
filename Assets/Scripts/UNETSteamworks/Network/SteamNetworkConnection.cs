@@ -50,5 +50,11 @@ public class SteamNetworkConnection : NetworkConnection
         }
     }
 
+    public void CloseP2PSession()
+    {
+        SteamNetworking.CloseP2PSessionWithUser(steamId);
+        steamId = CSteamID.Nil;
+    }
+
 }
 

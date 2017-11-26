@@ -193,16 +193,12 @@ public class UNETServerController {
         return NetworkServer.active;
     }
 
-
     public void Disconnect()
     {
-        if (NetworkServer.active)
-        {
-            NetworkServer.Shutdown();
-        }
-
         for(int i =0; i < connectedClients.Count; i++)
         {
+            NetworkServer.SetClientNotReady(connectedClients[i]);
+
             var steamConn = connectedClients[i] as SteamNetworkConnection;
             if (steamConn != null)
             {
@@ -214,11 +210,42 @@ public class UNETServerController {
         }
 
         connectedClients.Clear();
+
+        if (NetworkServer.active )
+        {
+            NetworkServer.Shutdown();
+        }
+
+        inviteFriendOnStart = false;
     }
 
     public void AddConnection(NetworkConnection conn)
     {
         connectedClients.Add(conn);
+    }
+
+    public void RemoveConnection(CSteamID steamId)
+    {
+        var conn = GetClient(steamId);
+        var steamConn = conn as SteamNetworkConnection;
+
+        if (conn != null)
+        {
+            conn.InvokeHandlerNoData(MsgType.Disconnect);
+
+            if(steamConn != null)
+            {
+                steamConn.CloseP2PSession();
+            }
+
+            connectedClients.Remove(conn);
+
+            conn.hostId = -1;
+            conn.Disconnect();
+            conn.Dispose();
+            conn = null;
+        }
+
     }
 
     public CSteamID GetSteamIDForConnection(NetworkConnection conn)

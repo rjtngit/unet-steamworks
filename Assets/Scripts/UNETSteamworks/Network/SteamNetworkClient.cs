@@ -33,8 +33,23 @@ public class SteamNetworkClient : NetworkClient {
     {
     }
 
+    public override void Disconnect()
+    {
+        m_AsyncConnect = ConnectState.Disconnected;
 
+        if (m_Connection != null & m_Connection.isConnected)
+        {
+            m_Connection.InvokeHandlerNoData(MsgType.Disconnect);
 
+            steamConnection.CloseP2PSession();
+            m_Connection.hostId = -1;
+            m_Connection.Disconnect();
+            m_Connection.Dispose();
+            m_Connection = null;
+
+        }
+
+    }
 }
 
 

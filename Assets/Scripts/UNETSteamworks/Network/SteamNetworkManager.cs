@@ -40,6 +40,7 @@ public class SteamNetworkManager : MonoBehaviour
     // callbacks
     private Callback<LobbyEnter_t> m_LobbyEntered;
     private Callback<GameLobbyJoinRequested_t> m_GameLobbyJoinRequested;
+    private Callback<LobbyChatUpdate_t> m_LobbyChatUpdate;
     private CallResult<LobbyMatchList_t> m_LobbyMatchList;
 
     private static HostTopology m_hostTopology = null;
@@ -80,6 +81,7 @@ public class SteamNetworkManager : MonoBehaviour
         if (SteamManager.Initialized) {
             m_LobbyEntered = Callback<LobbyEnter_t>.Create(OnLobbyEntered);
             m_GameLobbyJoinRequested = Callback<GameLobbyJoinRequested_t>.Create (OnGameLobbyJoinRequested);
+            m_LobbyChatUpdate = Callback<LobbyChatUpdate_t>.Create (OnLobbyChatUpdate);
             m_LobbyMatchList = CallResult<LobbyMatchList_t>.Create(OnLobbyMatchList);
 
         }
@@ -229,15 +231,36 @@ public class SteamNetworkManager : MonoBehaviour
             SteamMatchmaking.LeaveLobby(steamLobbyId);
         }
 
-        UNETServerController.Disconnect();
-
         if (myClient != null)
         {
             myClient.Disconnect();
+            myClient = null;
         }
+
+        UNETServerController.Disconnect();
+        NetworkClient.ShutdownAll();
 
         steamLobbyId.Clear();
     }
+
+
+    void OnLobbyChatUpdate(LobbyChatUpdate_t pCallback)
+    {
+        if (pCallback.m_rgfChatMemberStateChange == (uint) EChatMemberStateChange.k_EChatMemberStateChangeLeft && pCallback.m_ulSteamIDLobby == steamLobbyId.m_SteamID)
+        {
+            Debug.Log("A client has disconnected from the UNET server");
+
+            // user left lobby
+            var userId = new CSteamID(pCallback.m_ulSteamIDUserChanged);
+            if (UNETServerController.IsHostingServer())
+            {
+                UNETServerController.RemoveConnection(userId);
+            }
+
+            SteamNetworking.CloseP2PSessionWithUser(userId);
+        }
+    }
+
 
     void OnGameLobbyJoinRequested(GameLobbyJoinRequested_t pCallback)
     {
