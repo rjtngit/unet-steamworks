@@ -135,17 +135,19 @@ public class SteamNetworkManager : MonoBehaviour
                     // We are the server, one of our clients will handle this packet
                     conn = UNETServerController.GetClient(senderId);
 
-                    #if UNITY_EDITOR
-                    // Steam always thinks you are in-game when running in Unity editor.
-                    // This can cause the P2P session to persist after exiting playmode, which means UNETServerController.OnP2PSessionRequested is never called again unless you restart Steam and Unity
-                    // As a workaround, we assume the P2P connection has already been accepted if the sender is in the lobby but missing from the UNETServerController
-                    if (conn == null && IsMemberInSteamLobby(senderId))
+                    if (conn == null)
                     {
-                        Debug.Log("Running in Unity editor, P2P connection is still established on this machine. Sending acceptance message.");
-                        UNETServerController.CreateP2PConnectionWithPeer(senderId);
-                        conn = UNETServerController.GetClient(senderId);
+                        // In some cases the p2p connection can persist, resulting in UNETServerController.OnP2PSessionRequested not being called. This happens usually when testing in editor.
+                        // If the peers have already established a connection, reset it.
+                        P2PSessionState_t sessionState;
+                        if (SteamNetworking.GetP2PSessionState(senderId, out sessionState) && Convert.ToBoolean(sessionState.m_bConnectionActive))
+                        {
+                            Debug.Log("P2P connection is still established. Resetting.");
+                            SteamNetworking.CloseP2PSessionWithUser(senderId);
+                            UNETServerController.CreateP2PConnectionWithPeer(senderId);
+                            conn = UNETServerController.GetClient(senderId);
+                        }
                     }
-                    #endif
                 }
                 else
                 {
