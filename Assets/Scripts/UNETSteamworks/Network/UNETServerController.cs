@@ -134,11 +134,16 @@ public class UNETServerController {
 
     void DestroyPlayer(NetworkConnection conn)
     {
+        if (conn == null)
+        {
+            return;
+        }
+
         // quick and dirty hack to destroy a player. GameObject.FindObjectsOfType probably shouldn't be used here.
         var objs = GameObject.FindObjectsOfType<NetworkIdentity>();
         for (int i = 0; i < objs.Length; i++)
         {
-            if (objs[i].connectionToClient.connectionId == conn.connectionId)
+            if (objs[i].clientAuthorityOwner != null && objs[i].clientAuthorityOwner.connectionId == conn.connectionId)
             {
                 NetworkServer.Destroy(objs[i].gameObject);
             }
@@ -329,7 +334,7 @@ public class UNETServerController {
             }
         }
 
-        Debug.LogError("Client not found");
+        Debug.Log("Client not found");
         return null;
     }
 
