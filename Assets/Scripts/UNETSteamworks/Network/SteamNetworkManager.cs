@@ -35,6 +35,7 @@ public class SteamNetworkManager : MonoBehaviour
 
     // steam state vars
     public SessionConnectionState lobbyConnectionState {get; private set;}
+	[HideInInspector]
     public CSteamID steamLobbyId;
 
     // callbacks
