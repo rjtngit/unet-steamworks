@@ -66,8 +66,9 @@ public class SteamNetworkManager : MonoBehaviour
         return hostTopology.DefaultConfig.Channels.Count;
     }
 
-    void Awake()
+    void Start()
     {
+		// init
         Instance = this;
         DontDestroyOnLoad(this);
 
@@ -78,14 +79,11 @@ public class SteamNetworkManager : MonoBehaviour
             m_GameLobbyJoinRequested = Callback<GameLobbyJoinRequested_t>.Create (OnGameLobbyJoinRequested);
             m_LobbyChatUpdate = Callback<LobbyChatUpdate_t>.Create (OnLobbyChatUpdate);
             m_LobbyMatchList = CallResult<LobbyMatchList_t>.Create(OnLobbyMatchList);
-
         }
 
         UNETServerController.Init();
-    }
-
-    void Start()
-    {
+ 
+		// check if game started via friend invitation
         string[] args = System.Environment.GetCommandLineArgs ();
         string input = "";
         for (int i = 0; i < args.Length; i++) {
