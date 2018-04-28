@@ -69,6 +69,8 @@ public class UNETServerController {
         NetworkServer.dontListen = true;
         NetworkServer.Listen(0);
 
+        NetworkServer.SpawnObjects();
+
         // Create a local client-to-server connection to the "server"
         // Connect to localhost to trick UNET's ConnectState state to "Connected", which allows data to pass through TransportSend
         myClient = ClientScene.ConnectLocalServer();
@@ -84,9 +86,16 @@ public class UNETServerController {
         // register networked prefabs
         SteamNetworkManager.Instance.RegisterNetworkPrefabs();
 
+        ClientScene.Ready(serverToClientConn);
+        
+        // Hack trick to find and respawn NetworkIdentity objects to enable rpc
+        NetworkIdentity[] objectsToSpawn = GameObject.FindObjectsOfType<NetworkIdentity>();
+        foreach (NetworkIdentity uv in objectsToSpawn) {
+            NetworkServer.UnSpawn(uv.gameObject);
+            NetworkServer.Spawn(uv.gameObject);
+        }
 
         // Spawn self
-        ClientScene.Ready(serverToClientConn);
         SpawnPlayer(serverToClientConn);
 
         if (inviteFriendOnStart)
